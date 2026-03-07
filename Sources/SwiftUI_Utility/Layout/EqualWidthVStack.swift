@@ -121,3 +121,106 @@ private struct _EqualWidthVStack: Layout {
         }
     }
 }
+
+public struct SampleEqualWidthVStack: View {
+    enum Tab: String, CaseIterable, Identifiable {
+        var id: String { rawValue }
+        case home = "ホーム"
+        case search = "検索"
+        case library = "ライブラリ"
+
+        var color: Color {
+            switch self {
+            case .home: return .blue
+            case .search: return .orange
+            case .library: return .purple
+            }
+        }
+    }
+    
+    public init() {
+        
+    }
+    
+    @Namespace private var namespace
+    @State var selectedTab: Tab = .home
+    
+    public var body: some View {
+        VStack(spacing: 0) {
+            // カスタム上タブ
+            HStack(spacing: 24) {
+                ForEach(Tab.allCases) { tab in
+                    Button {
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                            selectedTab = tab
+                        }
+                    } label: {
+                        EqualWidthVStack(spacing: 6) {
+                            Text(tab.rawValue)
+                                .font(.system(size: 16, weight: .bold))
+                                .foregroundColor(selectedTab == tab ? .primary : .secondary)
+                                .padding(.horizontal, 4)
+                            
+                            if selectedTab == tab {
+                                RoundedRectangle(cornerRadius: 2)
+                                    .fill(Color.green)
+                                    .frame(width: 24, height: 4)
+                                    .matchedGeometryEffect(id: "selected_indicator", in: namespace)
+                            } else {
+                                Color.clear
+                                    .frame(width: 24, height: 4)
+                            }
+                        }
+                    }
+                    .buttonStyle(.plain)
+                }
+                Spacer()
+            }
+            .padding(.horizontal, 20)
+            .padding(.vertical, 12)
+            .background(Color(.systemBackground))
+            
+            Divider()
+
+            // ページコンテンツ (TabView)
+            TabView(selection: $selectedTab) {
+                ForEach(Tab.allCases) { tab in
+                    pageContent(for: tab)
+                        .tag(tab)
+                }
+            }
+            .tabViewStyle(.page(indexDisplayMode: .never)) // スワイプ可能なページスタイル
+        }
+    }
+    
+    @ViewBuilder
+    private func pageContent(for tab: Tab) -> some View {
+        ZStack {
+            tab.color.opacity(0.1).ignoresSafeArea()
+
+            VStack(spacing: 20) {
+                Image(systemName: systemIcon(for: tab))
+                    .font(.system(size: 60))
+                    .foregroundColor(tab.color)
+
+                Text("\(tab.rawValue) ページ")
+                    .font(.title2)
+                    .fontWeight(.medium)
+
+                Text("左右にスワイプしてページを切り替えられます。")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal)
+            }
+        }
+    }
+
+    private func systemIcon(for tab: Tab) -> String {
+        switch tab {
+        case .home: return "house.fill"
+        case .search: return "magnifyingglass"
+        case .library: return "books.vertical.fill"
+        }
+    }
+}
